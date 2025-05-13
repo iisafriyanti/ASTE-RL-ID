@@ -1,18 +1,22 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import BertTokenizer, BertForQuestionAnswering
+from transformers import BertTokenizer, BertForQuestionAnswering, AutoTokenizer, BertModel
 
 
 class TopModel(nn.Module):
     def __init__(self, dim, statedim, sent_count):
         super(TopModel, self).__init__()
         self.dim = dim
-        self.hid2state = nn.Linear(dim + statedim + 1024 + 25, statedim)
+        input_dim = 25 + dim + 768 + statedim #ini perubahan
+        #self.hid2state = nn.Linear(dim + statedim + 1024 + 25, statedim)
+        self.hid2state = nn.Linear(input_dim, statedim)
         self.state2prob = nn.Linear(statedim, sent_count+1)
 
     def forward(self, pos_vec, top_word_vec, sent_vec, memory, training, dropout):
+        print(f"Shapes - pos_vec: {pos_vec.shape}, top_word_vec: {top_word_vec.shape}, sent_vec: {sent_vec.shape}, memory: {memory.shape}")
         inp = torch.cat([pos_vec, top_word_vec, sent_vec, memory], dim=1)
+        print(f"Concatenated input shape: {inp.shape}")
         outp = F.dropout(torch.tanh(self.hid2state(inp)), p=dropout, training=training)
         prob = F.softmax(self.state2prob(outp), dim=1)
         return outp, prob 
@@ -25,7 +29,9 @@ class BotAspectModel(nn.Module):
         self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
         self.state2probL = nn.ModuleList([nn.Linear(statedim, 3) for i in range(0, sent_count)])
 
-    def forward(self, pos_vec, bot_bert_cls, aspect_vec, bot_word_vec, memory, sent, target, training, dropout): 
+    def forward(self, pos_vec, bot_bert_cls, aspect_vec, bot_word_vec, memory, sent, target, training, dropout):
+        print(f"Input shapes to concatenation: pos_vec {pos_vec.shape}, bot_bert_cls {bot_bert_cls.shape}, bot_word_vec {bot_word_vec.shape}, opinion_vec {opinion_vec.shape}, memory {memory.shape}, target {target.shape}")
+        print(f"Concatenated input shape: {inp.shape}") 
         inp = torch.cat([pos_vec, bot_bert_cls, bot_word_vec, aspect_vec, memory, target], dim=1)
         outp = F.dropout(torch.tanh(self.hid2state(inp)), p=dropout, training=training)
         prob = F.softmax(self.state2probL[sent-1](outp), dim=1)
@@ -36,11 +42,14 @@ class BotOpinionModel(nn.Module):
     def __init__(self, dim, statedim, sent_count):
         super(BotOpinionModel, self).__init__()
         self.dim = dim
+        input_dim = 25 + 1024*2 + dim*2 + statedim*2
         self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
         self.state2probL = nn.ModuleList([nn.Linear(statedim, 3) for i in range(0, sent_count)])
 
     def forward(self, pos_vec, bot_bert_cls, opinion_vec, bot_word_vec, memory, sent, target, training, dropout): 
+        print(f"Input shapes to concatenation: pos_vec {pos_vec.shape}, bot_bert_cls {bot_bert_cls.shape}, bot_word_vec {bot_word_vec.shape}, opinion_vec {opinion_vec.shape}, memory {memory.shape}, target {target.shape}")
         inp = torch.cat([pos_vec, bot_bert_cls, bot_word_vec, opinion_vec, memory, target], dim=1)
+        print(f"Concatenated input shape: {inp.shape}") 
         outp = F.dropout(torch.tanh(self.hid2state(inp)), p=dropout, training=training)
         prob = F.softmax(self.state2probL[sent-1](outp), dim=1)
         return outp, prob 
@@ -63,8 +72,10 @@ class Model(nn.Module):
         self.top2bot = nn.Linear(statedim, statedim)
         self.bot2top = nn.Linear(statedim, statedim)
         self.dropout = dropout
-        self.tokenizer = BertTokenizer.from_pretrained('bert-large-uncased')
-        self.bertqa = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad').bert
+        self.tokenizer = BertTokenizer.from_pretrained('indobenchmark/indobert-base-p1')
+        self.bertqa = BertForQuestionAnswering.from_pretrained('indobenchmark/indobert-base-p1').bert
+        #self.tokenizer = BertTokenizer.from_pretrained('bert-large-uncased')
+        #self.bertqa = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad').bert
         self.opinion2aspect = nn.Linear(statedim, statedim)
     
     def sample(self, prob, training, preoptions, position, device):
@@ -80,6 +91,7 @@ class Model(nn.Module):
 
     def forward(self, mode, pos_tags, sentext, preoptions=None, pre_aspect_actions=None, pre_opinion_actions=None, device=torch.device("cpu"), sentiments=None):
         # POS tag vectors
+        
         posin = torch.LongTensor(pos_tags).to(device)
         posvs = self.posvector(posin)
         posvs = torch.unsqueeze(posvs, dim=1)
@@ -91,7 +103,9 @@ class Model(nn.Module):
         # BERT encoding for high-level process
         right_input = self.tokenizer(sentext, return_tensors='pt').to(device)
         sentence_len = right_input['input_ids'].shape[1] - 2
-        left_input = self.tokenizer("Which tokens indicate sentiments relating pairs of aspect spans and opinion spans?", return_tensors='pt').to(device)
+        #left_input = self.tokenizer("Which tokens indicate sentiments relating pairs of aspect spans and opinion spans?", return_tensors='pt').to(device)
+        left_input = self.tokenizer("Token mana yang menunjukkan sentimen terkait aspek dan opini?", return_tensors='pt').to(device)
+        
         query_len = left_input['input_ids'].shape[1]
         if training:
             self.bertqa.train()
@@ -101,6 +115,7 @@ class Model(nn.Module):
         two_sentence_token_type_ids = torch.cat([left_input['token_type_ids'], torch.ones_like(right_input['token_type_ids'])[:,1:-1]],dim=1)
         two_sentence_attention_mask = torch.cat([left_input['attention_mask'], right_input['attention_mask'][:,1:-1]],dim=1)
         output = self.bertqa(input_ids=two_sentence_inputs_ids, token_type_ids=two_sentence_token_type_ids, attention_mask=two_sentence_attention_mask).last_hidden_state
+        print(f"BERT output shape: {output.shape}")
         wordintop = torch.unsqueeze(output[0,query_len:,:], dim=1)
         #------------------------------------------------------------------
         # First Layer
@@ -142,13 +157,16 @@ class Model(nn.Module):
                 # BERT encoding for low-level opinion process
                 actionb = torch.LongTensor(1, ).fill_(0).to(device)
                 actions, actprobs = [], []
-                bot_left_sentence = "What is the opinion span for the {} sentiment indicated at {}?".format(sentiment_text, sentiment_indicator_token)
+                # bot_left_sentence = "What is the opinion span for the {} sentiment indicated at {}?".format(sentiment_text, sentiment_indicator_token)
+                bot_left_sentence = "Apa span opini untuk sentimen {} yang ditunjukkan di {}?".format(sentiment_text, sentiment_indicator_token)
+                
                 left_input = self.tokenizer(bot_left_sentence, return_tensors='pt').to(device)
                 query_len = left_input['input_ids'].shape[1]
                 two_sentence_inputs_ids = torch.cat([left_input['input_ids'], right_input['input_ids'][:,1:-1]],dim=1)
                 two_sentence_token_type_ids = torch.cat([left_input['token_type_ids'], torch.ones_like(right_input['token_type_ids'])[:,1:-1]],dim=1)
                 two_sentence_attention_mask = torch.cat([left_input['attention_mask'], right_input['attention_mask'][:,1:-1]],dim=1)
                 output = self.bertqa(input_ids=two_sentence_inputs_ids, token_type_ids=two_sentence_token_type_ids, attention_mask=two_sentence_attention_mask).last_hidden_state
+                print(f"BERT output shape: {output.shape}")
                 bot_bert_cls = torch.unsqueeze(output[0,0,:], dim=0)
                 wordinbot = torch.unsqueeze(output[0,query_len:,:], dim=1)
                 for y in range(sentence_len):
@@ -168,7 +186,9 @@ class Model(nn.Module):
                 # BERT encoding for low-level aspect process
                 actionb = torch.LongTensor(1, ).fill_(0).to(device)
                 actions, actprobs = [], []
-                bot_left_sentence = "What is the aspect span for the {} sentiment indicated at {}?".format(sentiment_text, sentiment_indicator_token)
+                #bot_left_sentence = "What is the aspect span for the {} sentiment indicated at {}?".format(sentiment_text, sentiment_indicator_token)
+                bot_left_sentence = "Apa span aspek untuk sentimen {} yang ditunjukkan di {}?".format(sentiment_text, sentiment_indicator_token)
+                
                 left_input = self.tokenizer(bot_left_sentence, return_tensors='pt').to(device)
                 query_len = left_input['input_ids'].shape[1]
                 two_sentence_inputs_ids = torch.cat([left_input['input_ids'], right_input['input_ids'][:,1:-1]],dim=1)
@@ -177,6 +197,8 @@ class Model(nn.Module):
                 output = self.bertqa(input_ids=two_sentence_inputs_ids, token_type_ids=two_sentence_token_type_ids, attention_mask=two_sentence_attention_mask).last_hidden_state
                 bot_bert_cls = torch.unsqueeze(output[0,0,:], dim=0)
                 wordinbot = torch.unsqueeze(output[0,query_len:,:], dim=1)
+                #loop_len = min(sentence_len, posvs.shape[0])
+                #for y in range(loop_len):
                 for y in range(sentence_len):
                     mem, probb = self.botAspectModel(\
                             posvs[y], bot_bert_cls, self.aspectvector(actionb), wordinbot[y], \

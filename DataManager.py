@@ -1,11 +1,18 @@
 import json
 import ast
 import spacy
+import nltk
+nltk.download('punkt')
+nltk.download('punk_tab')
 from spacy.tokens import Doc
-from transformers import BertTokenizer
-import tokenizations
-import os
+from transformers import BertTokenizer, AutoTokenizer
+from nlp_id.postag import PosTag
+from nltk.tokenize import word_tokenize
 
+#import tokenizations
+import os
+from spacy_alignments import get_alignments
+from transformers.models.bert.tokenization_bert import whitespace_tokenize
 
 class WhitespaceTokenizer(object):
     def __init__(self, vocab):
@@ -21,11 +28,17 @@ class WhitespaceTokenizer(object):
 class DataManager:
     def __init__(self, path, testfile, test):
         # POS tagger
-        nlp = spacy.load("en_core_web_sm")
-        nlp.tokenizer = WhitespaceTokenizer(nlp.vocab)
-        # BERT tokeniser
-        bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
+        # nlp = spacy.load("en_core_web_sm")
+        # nlp.tokenizer = WhitespaceTokenizer(nlp.vocab)
+        #nltk.download('punk_tab')
+        #nlp = spacy.load("id_core_news_sm")
 
+        self.postagger = PosTag()
+        
+        # BERT tokeniser
+        # bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
+        self.tokenizer = BertTokenizer.from_pretrained('indobenchmark/indobert-base-p1')
+        
         # process data
         # NOTE: order for self.all_pos_tags depends on dataset, order has to be the same between dataset splits
         self.all_pos_tags = []
@@ -42,28 +55,46 @@ class DataManager:
                     # process ASTE data for HRL
                     sentence, triplets = line.strip().split('####')
                     # tokenize for BERT
-                    whitespace_tokens = sentence.split()
+                    # whitespace_tokens = sentence.split()
+                    words = word_tokenize(sentence)
+                    pos_tags = self.postagger.get_pos_tag(words)
+
                     bert_tokens = bert_tokenizer.tokenize(sentence)
                     # https://github.com/tamuhey/tokenizations
-                    whitespace_to_bert, bert_to_whitespace = tokenizations.get_alignments(whitespace_tokens, bert_tokens)
+
+                    # whitespace_to_bert, bert_to_whitespace = get_alignments(whitespace_tokens, bert_tokens)
+                    whitespace_to_bert, _ = get_alignments(words, bert_tokens)
+
                     # get WordPiece POS tags
-                    doc = nlp(sentence)
-                    pos_tags = ([w.pos_ for w in doc])
-                    for pt in pos_tags:
-                        pt_b = 'B-' + pt
-                        pt_i = 'I-' + pt
-                        if pt_b not in self.all_pos_tags:
-                            self.all_pos_tags.append(pt_b)
-                        if pt_i not in self.all_pos_tags:
-                            self.all_pos_tags.append(pt_i)
+                    # doc = nlp(sentence)
+                    # pos_tags = ([w.pos_ for w in doc])
+                    # for pt in pos_tags:
+                    #    pt_b = 'B-' + pt
+                    #    pt_i = 'I-' + pt
+                    #    if pt_b not in self.all_pos_tags:
+                    #        self.all_pos_tags.append(pt_b)
+                    #    if pt_i not in self.all_pos_tags:
+                    #        self.all_pos_tags.append(pt_i)
+                    
                     bert_pos_tags = []
-                    for i, pos_tag in enumerate(pos_tags):
-                        if len(whitespace_to_bert[i]) > 1:
-                            bert_pos_tags.append('B-' + pos_tag)
-                            for j in range(len(whitespace_to_bert[i])-1):
-                                bert_pos_tags.append('I-' + pos_tag)
+                    #for i, pos_tag in enumerate(pos_tags):
+                    for i, bert_indices in enumerate(whitespace_to_bert):
+                      tag = pos_tags[i][1]
+                      for j, bert_idx in enumerate(bert_indices):
+                        if j == 0:
+                          bert_pos_tags.append(f"B-{tag}")
                         else:
-                            bert_pos_tags.append('B-' + pos_tag)
+                          bert_pos_tags.append(f"I-{tag}")
+
+                    for tag in bert_pos_tags:
+                      if tag not in self.all_pos_tags:
+                        self.all_pos_tags.append(tag)
+                        #if len(whitespace_to_bert[i]) > 1:
+                        #    bert_pos_tags.append('B-' + pos_tag)
+                        #    for j in range(len(whitespace_to_bert[i])-1):
+                        #        bert_pos_tags.append('I-' + pos_tag)
+                        #else:
+                        #    bert_pos_tags.append('B-' + pos_tag)
 
                     if not test:
                         triplets = ast.literal_eval(triplets)

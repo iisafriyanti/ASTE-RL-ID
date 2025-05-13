@@ -74,6 +74,7 @@ def work(mode, train_data, test_data, dev_data, model, args, sampleround, epoch,
 
 
 if __name__ == "__main__":
+    mp.set_start_method('spawn', force=True) #Ditambahin ini
     # get args
     argv = sys.argv[1:]
     parser = Parser().getParser()
@@ -109,7 +110,7 @@ if __name__ == "__main__":
             json.dump(vars(args), f)
             f.close()
 
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = Model(args.lr, args.dim, args.statedim, dm.sent_count, args.dropout, all_pos_tags)
     model.to(device)
     if args.start != '':
