@@ -12,8 +12,12 @@ def workProcess(model, datas, sample_round, mode, device, sentiments, test):
     acc, cnt, tot = 0, 0, 0
     loss = .0
     for data in datas:
+        if not data['triplets']: #Filtering the empty data
+          continue
+        #print(data)
         top_actions, top_actprobs, bot_aspect_actions, bot_aspect_actprobs, bot_opinion_actions, bot_opinion_actprobs = [], [], [], [], [], []
         if not test:
+            #print(f"Cetak data {data['triplets']}")
             preoptions, pre_aspect_actions, pre_opinion_actions = rule_actions(data['triplets'])
         bert_to_whitespace = data['bert_to_whitespace']
         whitespace_tokens = data['whitespace_tokens']
