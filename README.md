@@ -1,20 +1,7 @@
-# Aspect Sentiment Triplet Extraction using Reinforcement Learning (CIKM 2021)
+# Aspect Sentiment Triplet Extraction (ASTE) for Bahasa Indonesia Using Reinforcement Learning
 
-**Abstract**: Aspect Sentiment Triplet Extraction (ASTE) is the task of extracting
-triplets of aspect terms, their associated sentiments, and the opinion
-terms that provide evidence for the expressed sentiments. Previous
-approaches to ASTE usually simultaneously extract all three components or first identify the aspect and opinion terms, then pair them
-up to predict their sentiment polarities. In this work, we present
-a novel paradigm, ASTE-RL, by regarding the aspect and opinion
-terms as arguments of the expressed sentiment in a hierarchical
-reinforcement learning (RL) framework. We first focus on sentiments expressed in a sentence, then identify the target aspect and
-opinion terms for that sentiment. This takes into account the mutual interactions among the triplet’s components while improving
-exploration and sample efficiency. Furthermore, this hierarchical RL
-setup enables us to deal with multiple and overlapping triplets. In
-our experiments, we evaluate our model on existing datasets from
-laptop and restaurant domains and show that it achieves state-ofthe-art performance.
+**Abstract**: Aspect Sentiment Triplet Extraction (ASTE) is the task of extracting structured triplets consisting of aspect terms, their associated sentiment polarities, and the corresponding opinion terms that justify the expressed sentiments. While prior work in ASTE has primarily focused on English—either by jointly extracting all three components or using a pipeline approach to first detect aspects and opinions before predicting sentiments—this study introduces ASTE-RL, a novel reinforcement learning (RL)-based framework adapted for Bahasa Indonesia. In our approach, we reformulate ASTE as a hierarchical RL problem, where aspect and opinion terms are treated as arguments of the expressed sentiment. The model first identifies sentiment expressions in a sentence, then dynamically extracts the relevant aspect-opinion pairs, capturing their mutual dependencies while improving exploration efficiency. This hierarchical structure allows the model to handle multiple and overlapping triplets, a common challenge in morphologically rich languages like Bahasa Indonesia. We evaluate ASTE-RL on annotated datasets for Bahasa Indonesia, demonstrating its superiority over pre-trained only model.
 
-🔥 :fire: 🔥 [Download the paper](https://arxiv.org/pdf/2108.06107.pdf)
 
 ## Data
 ### ASTE-Data-V2
@@ -25,8 +12,9 @@ ASTE-Data-V2 is originally released by the paper "Position-Aware Tagging for Asp
 - torch
 - numpy
 - spacy
-- transformers (https://huggingface.co/transformers/installation.html)
-- tokenizations (https://github.com/explosion/tokenizations)
+- transformers
+- spacy-alignments
+- stanza
 
 
 ## Run
@@ -60,17 +48,17 @@ parser.add_argument('--seed', type=int, default=1, help="PyTorch seed value")
 
 Start with pretraining:
 ```
-python main.py --datapath ./data/ASTE-Data-V2-EMNLP2020/14lap/ --pretrain True
+python main.py --datapath ./data-id/1000_dataset --pretrain True
 ```
 
 Then reinforcement learning fine-tuning:
 ```
-python main.py --lr 0.000005 --datapath ./data/ASTE-Data-V2-EMNLP2020/14lap/ --start checkpoints/{experiment_id}/model
+python main.py --lr 0.00005 --datapath ./data-id/1000_dataset/ --start checkpoints/{experiment_id}/model
 ```
 
 Inference (results will be printed, can be modified to be saved to a file in `TrainProcess.py`):
 ```
-python main.py --datapath ./data/ASTE-Data-V2-EMNLP2020/14lap/ --start checkpoints/{experiment_id}/model --test True --testfile test_triplets.txt
+python main.py --datapath ./data-id/1000_dataset --start checkpoints/{experiment_id}/model --test True --testfile test_triplets.txt
 ```
 
 
@@ -91,7 +79,4 @@ python main.py --datapath ./data/ASTE-Data-V2-EMNLP2020/14lap/ --start checkpoin
 
 
 ## Acknowledgements
-Our code is adapted from the code from the paper "A Hierarchical Framework for Relation Extraction with Reinforcement Learning" at https://github.com/truthless11/HRL-RE. We would like to thank the authors for their well-organised and efficient code.
-
-## Citation
-Samson Yu Bai Jian, Tapas Nayak, Navonil Majumder, Soujanya Poria. 2021. [Aspect Sentiment Triplet Extraction Using Reinforcement Learning](https://arxiv.org/pdf/2108.06107.pdf). In CIKM ’21: Proceedings of the 30th ACM International Conference on Information & Knowledge Management, November 01–05, 2021, Gold Coast, Queensland, Australia. ACM, New York, NY, USA, 5 pages.
+Our code is adapted from the code from the paper "Aspect sentiment triplet extraction using reinforcement learning" at [https://github.com/truthless11/HRL-RE](https://github.com/declare-lab/ASTE-RL). We would like to thank the authors for their well-organised and efficient code.
