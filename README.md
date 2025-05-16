@@ -2,10 +2,6 @@
 
 **Abstract**: Aspect Sentiment Triplet Extraction (ASTE) is the task of extracting structured triplets consisting of aspect terms, their associated sentiment polarities, and the corresponding opinion terms that justify the expressed sentiments. While prior work in ASTE has primarily focused on English—either by jointly extracting all three components or using a pipeline approach to first detect aspects and opinions before predicting sentiments—this study introduces ASTE-RL, a novel reinforcement learning (RL)-based framework adapted for Bahasa Indonesia. In our approach, we reformulate ASTE as a hierarchical RL problem, where aspect and opinion terms are treated as arguments of the expressed sentiment. The model first identifies sentiment expressions in a sentence, then dynamically extracts the relevant aspect-opinion pairs, capturing their mutual dependencies while improving exploration efficiency. This hierarchical structure allows the model to handle multiple and overlapping triplets, a common challenge in morphologically rich languages like Bahasa Indonesia. We evaluate ASTE-RL on annotated datasets for Bahasa Indonesia, demonstrating its superiority over pre-trained only model.
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6803039baf4bc75eb64d15785b98ad04ae55e1a8
 ## Data
 ### IndoLEGO-ABSA
 IndoLEGO-ABSA is originally released by the paper "Indo LEGO-ABSA: a multitask generative aspect based sentiment analysis for Indonesian language". It can be downloaded [here](https://github.com/rdyzakya/IndoLEGO-ABSA/tree/main/data).
@@ -64,22 +60,5 @@ Inference (results will be printed, can be modified to be saved to a file in `Tr
 python main.py --datapath ./data-id/1000_dataset --start checkpoints/{experiment_id}/model --test True --testfile test_triplets.txt
 ```
 
-
-## Custom Data
-1. Edit `Parser.py` to load the necessary files.
-2. Add your data loader in `DataManager.py`.
-3. Modify your data loader in `DataManager.py` to output these information:
-    - **self.all_pos_tags: ['B-PRON', 'I-PRON', 'B-VERB', 'I-VERB', ...]** (_order depends on your dataset_)
-    - **self.sentiments: ['POS', 'NEG', 'NEU']** (_order depends on your dataset_)
-    - **self.data: {'train': [...], 'dev': [...], 'test': [...]}** (_key names depend on you_)
-4. Modify your data loader in `DataManager.py` to output self.data with these information:
-    - **'sentext': "I like your dog ."**
-    - **'triplets': {'sentpol': 1, 'aspect': 'your dog', 'opinion': 'like', 'aspect_tags': [0,0,2,1,0], 'opinion_tags': [0,2,0,0,0]}** (_'sentpol' refers to sentiment polarity and 1 is the index+1 of the positive sentiment in self.sentiments, +1 is to account for the lack of sentiment having an index of 0. For aspect/opinion tags, 0 is the non-aspect/opinion span, 1 is the inside of the span and 2 is the beginning of the span._)
-    - **'pos_tags': [0,2,0,6,16]**
-    - **'bert_to_whitespace': [[0],[1],[2],[3],[4]]** (_This is used for printing inference results in their original format without BERT's subword tokenisation. It shows the alignment between the BERT tokens and whitespace tokens. In this example, since BERT's tokeniser splits the tokens into the same ones as a simple whitespace tokeniser without subwords, there is a one-to-one match between the BERT and whitespace tokens._)
-    - **'whitespace_tokens': ['I', 'like', 'your', 'dog', '.']** (_This is used for printing inference results in their original format without BERT's subword tokenisation._)
-5. Edit `main.py` to use your data loader.
-
-
 ## Acknowledgements
-Our code is adapted from the code from the paper "Aspect sentiment triplet extraction using reinforcement learning" at [https://github.com/truthless11/HRL-RE](https://github.com/declare-lab/ASTE-RL). We would like to thank the authors for their well-organised and efficient code.
+Our code is adapted from the code from the paper "Aspect sentiment triplet extraction using reinforcement learning" at [https://github.com/declare-lab/ASTE-RL](https://github.com/declare-lab/ASTE-RL). We would like to thank the authors for their well-organised and efficient code.
