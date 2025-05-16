@@ -4,8 +4,8 @@
 
 
 ## Data
-### ASTE-Data-V2
-ASTE-Data-V2 is originally released by the paper "Position-Aware Tagging for Aspect Sentiment Triplet Extraction". It can be downloaded here: https://github.com/xuuuluuu/SemEval-Triplet-data/tree/master/ASTE-Data-V2-EMNLP2020.
+### IndoLEGO-ABSA
+IndoLEGO-ABSA is originally released by the paper "Indo LEGO-ABSA: a multitask generative aspect based sentiment analysis for Indonesian language". It can be downloaded [here](https://github.com/rdyzakya/IndoLEGO-ABSA/tree/main/data).
 
 
 ## Requirements
