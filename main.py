@@ -111,6 +111,7 @@ if __name__ == "__main__":
             f.close()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"args.dim = {args.dim}, args.statedim = {args.statedim}")
     model = Model(args.lr, args.dim, args.statedim, dm.sent_count, args.dropout, all_pos_tags)
     model.to(device)
     if args.start != '':

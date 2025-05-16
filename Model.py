@@ -8,9 +8,9 @@ class TopModel(nn.Module):
     def __init__(self, dim, statedim, sent_count):
         super(TopModel, self).__init__()
         self.dim = dim
-        input_dim = 25 + dim + 768 + statedim #ini perubahan
-        #self.hid2state = nn.Linear(dim + statedim + 1024 + 25, statedim)
-        self.hid2state = nn.Linear(input_dim, statedim)
+        #input_dim = 25 + dim + 768 + statedim #ini perubahan
+        self.hid2state = nn.Linear(dim + statedim + 1024 + 25, statedim)
+        #self.hid2state = nn.Linear(input_dim, statedim)
         self.state2prob = nn.Linear(statedim, sent_count+1)
         #print(f"TopModel dim: {dim} statedim: {statedim}")
 
@@ -27,9 +27,9 @@ class BotAspectModel(nn.Module):
     def __init__(self, dim, statedim, sent_count):
         super(BotAspectModel, self).__init__()
         self.dim = dim
-        input_dim = 25 + dim + 768*2 + statedim*2 #ini perubahan
-        #self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
-        self.hid2state = nn.Linear(input_dim, statedim)
+        #input_dim = 25 + dim + 768*2 + statedim*2 #ini perubahan
+        self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
+        #self.hid2state = nn.Linear(input_dim, statedim)
         self.state2probL = nn.ModuleList([nn.Linear(statedim, 3) for i in range(0, sent_count)])
 
     def forward(self, pos_vec, bot_bert_cls, aspect_vec, bot_word_vec, memory, sent, target, training, dropout):
@@ -45,9 +45,9 @@ class BotOpinionModel(nn.Module):
     def __init__(self, dim, statedim, sent_count):
         super(BotOpinionModel, self).__init__()
         self.dim = dim
-        input_dim = 25 + 768*2 + dim + statedim*2
-        #self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
-        self.hid2state = nn.Linear(input_dim, statedim)
+        #input_dim = 25 + 768*2 + dim + statedim*2
+        self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
+        #self.hid2state = nn.Linear(input_dim, statedim)
         self.state2probL = nn.ModuleList([nn.Linear(statedim, 3) for i in range(0, sent_count)])
         #print(f"BotModel dim: {dim} statedim: {statedim}")
 
