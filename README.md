@@ -14,8 +14,6 @@ setup enables us to deal with multiple and overlapping triplets. In
 our experiments, we evaluate our model on existing datasets from
 laptop and restaurant domains and show that it achieves state-ofthe-art performance.
 
-🔥 :fire: 🔥 [Download the paper](https://arxiv.org/pdf/2108.06107.pdf)
-
 ## Data
 ### ASTE-Data-V2
 ASTE-Data-V2 is originally released by the paper "Position-Aware Tagging for Aspect Sentiment Triplet Extraction". It can be downloaded here: https://github.com/xuuuluuu/SemEval-Triplet-data/tree/master/ASTE-Data-V2-EMNLP2020.

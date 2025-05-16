@@ -9,7 +9,8 @@ class TopModel(nn.Module):
         super(TopModel, self).__init__()
         self.dim = dim
         #input_dim = 25 + dim + 768 + statedim #ini perubahan
-        self.hid2state = nn.Linear(dim + statedim + 1024 + 25, statedim)
+        self.hid2state = nn.Linear(dim + statedim + 768 + 25, statedim)  # 1024 -> 768 #ini perubahan
+        # self.hid2state = nn.Linear(dim + statedim + 1024 + 25, statedim)
         #self.hid2state = nn.Linear(input_dim, statedim)
         self.state2prob = nn.Linear(statedim, sent_count+1)
         #print(f"TopModel dim: {dim} statedim: {statedim}")
@@ -28,7 +29,8 @@ class BotAspectModel(nn.Module):
         super(BotAspectModel, self).__init__()
         self.dim = dim
         #input_dim = 25 + dim + 768*2 + statedim*2 #ini perubahan
-        self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
+        self.hid2state = nn.Linear(dim + statedim*2 + 768*2 + 25, statedim)  # 1024 -> 768 #ini perubahan
+        # self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
         #self.hid2state = nn.Linear(input_dim, statedim)
         self.state2probL = nn.ModuleList([nn.Linear(statedim, 3) for i in range(0, sent_count)])
 
@@ -46,7 +48,8 @@ class BotOpinionModel(nn.Module):
         super(BotOpinionModel, self).__init__()
         self.dim = dim
         #input_dim = 25 + 768*2 + dim + statedim*2
-        self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
+        self.hid2state = nn.Linear(dim + statedim*2 + 768*2 + 25, statedim)  # 1024 -> 768 #ini perubahan
+        # self.hid2state = nn.Linear(dim + statedim*2 + 1024*2 + 25, statedim)
         #self.hid2state = nn.Linear(input_dim, statedim)
         self.state2probL = nn.ModuleList([nn.Linear(statedim, 3) for i in range(0, sent_count)])
         #print(f"BotModel dim: {dim} statedim: {statedim}")
@@ -78,7 +81,8 @@ class Model(nn.Module):
         self.bot2top = nn.Linear(statedim, statedim)
         self.dropout = dropout
         self.tokenizer = BertTokenizer.from_pretrained('indobenchmark/indobert-base-p1')
-        self.bertqa = BertForQuestionAnswering.from_pretrained('indobenchmark/indobert-base-p1').bert
+        self.bertqa = BertModel.from_pretrained('indobenchmark/indobert-base-p1')
+        # self.bertqa = BertForQuestionAnswering.from_pretrained('indobenchmark/indobert-base-p1').bert
         #self.tokenizer = BertTokenizer.from_pretrained('bert-large-uncased')
         #self.bertqa = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad').bert
         self.opinion2aspect = nn.Linear(statedim, statedim)
@@ -119,8 +123,15 @@ class Model(nn.Module):
         two_sentence_inputs_ids = torch.cat([left_input['input_ids'], right_input['input_ids'][:,1:-1]],dim=1)
         two_sentence_token_type_ids = torch.cat([left_input['token_type_ids'], torch.ones_like(right_input['token_type_ids'])[:,1:-1]],dim=1)
         two_sentence_attention_mask = torch.cat([left_input['attention_mask'], right_input['attention_mask'][:,1:-1]],dim=1)
-        output = self.bertqa(input_ids=two_sentence_inputs_ids, token_type_ids=two_sentence_token_type_ids, attention_mask=two_sentence_attention_mask).last_hidden_state
-        #print(f"BERT output shape: {output.shape}")
+        bert_output = self.bertqa(
+            input_ids=two_sentence_inputs_ids,
+            token_type_ids=two_sentence_token_type_ids,
+            attention_mask=two_sentence_attention_mask
+        )
+        output = bert_output.last_hidden_state
+
+        # output = self.bertqa(input_ids=two_sentence_inputs_ids, token_type_ids=two_sentence_token_type_ids, attention_mask=two_sentence_attention_mask).last_hidden_state
+        # print(f"BERT output shape: {output.shape}")
         wordintop = torch.unsqueeze(output[0,query_len:,:], dim=1)
         #------------------------------------------------------------------
         # First Layer
