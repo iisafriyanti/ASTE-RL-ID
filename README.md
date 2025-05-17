@@ -4,7 +4,8 @@
 
 ## Data
 ### IndoLEGO-ABSA
-IndoLEGO-ABSA is originally released by the paper "Indo LEGO-ABSA: a multitask generative aspect based sentiment analysis for Indonesian language". It can be downloaded [here](https://github.com/rdyzakya/IndoLEGO-ABSA/tree/main/data).
+IndoLEGO-ABSA is originally released by the paper "Generative Opinion Triplet Extraction Using
+Pretrained Language Model". It can be downloaded [here](https://github.com/rdyzakya/IndoLEGO-ABSA/tree/main/data).
 
 
 ## Requirements
