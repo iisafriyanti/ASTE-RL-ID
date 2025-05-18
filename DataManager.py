@@ -42,6 +42,7 @@ class DataManager:
             self.data[name] = []
             filename = testfile if name == "test" else name + "_triplets.txt"
             with open(os.path.join(path, filename)) as fl:
+                #print(fl.readline())
                 for line in fl.readlines():
                     # process ASTE data for HRL
                     sentence, triplets = line.strip().split('####')

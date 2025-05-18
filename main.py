@@ -64,8 +64,8 @@ def work(mode, train_data, test_data, dev_data, model, args, sampleround, epoch,
             log_f.write("Epoch " + str(e) + ": dev F1=" + str(devF1) + ", test F1=" + str(testF1) + "\n")
             log_f.close()
             if devF1 > top_dev_f1:
-                # torch.save(model, "checkpoints/" + str(experiment_id) + "/model") #original code
-                torch.save(model.state_dict(), "checkpoints/" + str(experiment_id) + "/model.pth")
+                torch.save(model, "checkpoints/" + str(experiment_id) + "/model") #original code
+                # torch.save(model.state_dict(), "checkpoints/" + str(experiment_id) + "/model.pth")
                 best_results = "Epoch " + str(e) + ": dev F1=" + str(devF1) + ", test F1=" + str(testF1)
                 best_f = open("checkpoints/" + str(experiment_id) + "/best.txt", 'w')
                 best_f.write(args.datapath + '\n')
@@ -117,13 +117,13 @@ if __name__ == "__main__":
     model.to(device)
     if args.start != '':
         # if pretrained model exists
-        # pretrain_model = torch.load(args.start, map_location='cpu') #original code
-        model = Model(args.lr, args.dim, args.statedim, dm.sent_count, args.dropout, all_pos_tags)
-        model.load_state_dict(torch.load(args.start, map_location='cpu'))
-        model.to(device)
-        model_dict = model.state_dict()
-        pretrained_dict = torch.load(args.start, map_location='cpu')
-        # pretrained_dict = pretrain_model.state_dict() #original code
+        pretrain_model = torch.load(args.start, map_location='cpu', weights_only = False) #original code
+        # model = Model(args.lr, args.dim, args.statedim, dm.sent_count, args.dropout, all_pos_tags) #mod
+        # model.load_state_dict(torch.load(args.start, map_location='cpu')) #mod
+        # model.to(device) #mod
+        model_dict = model.state_dict() #mod
+        #pretrained_dict = torch.load(args.start, map_location='cpu')
+        pretrained_dict = pretrain_model.state_dict() #original code
         pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict} 
         model_dict.update(pretrained_dict) 
         model.load_state_dict(model_dict) 
