@@ -9,6 +9,7 @@ from AccCalc import calcF1
 import datetime
 import json
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def work(mode, train_data, test_data, dev_data, model, args, sampleround, epoch, device, experiment_id):
@@ -32,7 +33,10 @@ def work(mode, train_data, test_data, dev_data, model, args, sampleround, epoch,
             # print time per batch
             if b % args.print_per_batch == 0:
                 print("Train batch", b, ": F1=", trainF1, ", time=", (time.time() - start))
-
+        
+        plt.savefig(f"checkpoints/{experiment_id}/rewards_epoch_{e}.png")
+        plt.close()
+        
         with torch.no_grad():
             # validation
             batchcnt = (len(dev_data) - 1) // args.batchsize_test + 1

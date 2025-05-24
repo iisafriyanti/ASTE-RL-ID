@@ -2,16 +2,47 @@ import time
 import torch.optim as optim
 import queue
 from AccCalc import calc_acc, rule_actions
-from Optimize import optimize_round
+from Optimize import optimize_round, calcTopReward, calcBotFinalReward, calcTopFinalReward
+import matplotlib.pyplot as plt
+from collections import defaultdict
+import numpy as np
 
+#Class tambahan untuk mengecek reward per episode
+class RewardTracker:
+    def __init__(self):
+        self.episode_rewards = defaultdict(list)
+        self.fig, self.ax = plt.subplots(figsize=(10,5))
+        
+    def update(self, episode, reward_type, value):
+        self.episode_rewards[reward_type].append((episode, value))
+        
+    def plot(self):
+        self.ax.clear()
+        for reward_type, values in self.episode_rewards.items():
+            episodes = [x[0] for x in values]
+            rewards = [x[1] for x in values]
+            self.ax.plot(episodes, rewards, label=reward_type)
+        
+        self.ax.set_xlabel('Episode')
+        self.ax.set_ylabel('Reward')
+        self.ax.set_title('Rewards per Episode')
+        self.ax.legend()
+        plt.savefig('rewards_plot.png')
+        plt.close()
+
+#Instansiasi RewardTracker()
+reward_tracker = RewardTracker()
 
 def workProcess(model, datas, sample_round, mode, device, sentiments, test):
+    global reward_tracker 
     """
     Get model outputs and train model.
     """
     acc, cnt, tot = 0, 0, 0
     loss = .0
+    data_idx = 0
     for data in datas:
+        
         if not data['triplets']: #Filtering the empty data
           continue
         #print(data)
@@ -50,6 +81,17 @@ def workProcess(model, datas, sample_round, mode, device, sentiments, test):
         if "test" not in mode:
             loss += optimize_round(model, top_actions, top_actprobs, bot_aspect_actions,\
                     bot_aspect_actprobs, bot_opinion_actions, bot_opinion_actprobs, data['triplets'], mode, device)
+        
+            # Catat rewards
+            data_idx += 1
+            top_reward = calcTopFinalReward(top_action, data['triplets'], 0.)
+            bot_reward = np.mean(calcBotFinalReward(top_action, bot_aspect_action,
+                                                    bot_opinion_action, data['triplets'], 0.))
+            
+            print(f"Top Reward:{top_reward} and Bottom Reward:{bot_reward}")
+            reward_tracker.update(data_idx, "Top Reward", top_reward)
+            reward_tracker.update(data_idx, "Bottom Reward", bot_reward)
+        
         # print for inference/testing
         elif test:
             all_preds = []
@@ -120,9 +162,14 @@ def workProcess(model, datas, sample_round, mode, device, sentiments, test):
                     all_preds.append((sentiments[top_action[i].item()-1], ' '.join(aspect), ' '.join(opinion)))
                     j += 1
             print(data['sentext'], '====>', str(all_preds))
-
+    
+        
     if len(datas) == 0:
         return 0, 0, 0, 0
+    
+    # Plot di akhir epoch
+    if not test:
+        reward_tracker.plot()   
     return acc, cnt, tot, loss / len(datas)
 
 
